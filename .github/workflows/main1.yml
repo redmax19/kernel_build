@@ -6,12 +6,12 @@ on:
       GITHUB_BRANCH:
         description: 'Branch of github repo to clone'
         required: true
-        default: '-b A166BXXS4BYG1'
+        default: '-b main'
       
       GITHUB_REPO:
         description: 'Github repo to clone'
         required: true
-        default: 'https://github.com/SN-Abdullah-Al-Noman/SM-A166B'
+        default: 'https://github.com/redmax19/android_kernel_samsung_a14x'
 
 jobs:
   build:
@@ -42,24 +42,9 @@ jobs:
           cd kernel_source
           sudo touch logs.txt && sudo chmod a+w logs.txt
           sudo bash build_kernel.sh |& tee logs.txt
-          sudo curl \
-              -F "chat_id=2081111916" \
-              -F document=@logs.txt \
-              -F "caption=${{ github.event.inputs.GITHUB_URL }}" \
-              "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
-
-      - name: 7️⃣ Uploading kernel in telegram
-        env:
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-        run: |
-          cd kernel_source/arch/arm64/boot
-          sudo mv Image boot.img-kernel
-          sudo sh -c 'gzip -c boot.img-kernel > boot.img-kernel.gz'
-          sudo rm -f boot.img-kernel
-          sudo mv boot.img-kernel.gz boot.img-kernel
           
-          sudo curl \
-              -F "chat_id=2081111916" \
-              -F "document=@boot.img-kernel" \
-              -F "caption=${{ github.event.inputs.GITHUB_REPO }}" \
-              "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendDocument"
+      - name: Upload AnyKernel package
+        uses: actions/upload-artifact@v7
+        with:
+            name: AnyKernel package
+            path: out/arch/arm64/boot/Image
