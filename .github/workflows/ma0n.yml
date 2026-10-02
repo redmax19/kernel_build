@@ -73,11 +73,11 @@ jobs:
 
           # Zip
           cd ../anykernel
-          zip -r9 ../lineage-23.1-kernel_${DATE}.zip ./*
+          zip -r9 ../lineage-24.0-kernel_${DATE}.zip ./*
 
       - name: Upload ZIP to GoFile
         run: |
-          wget https://raw.githubusercontent.com/GustavoMends/go-up/master/go-up
-          chmod +x go-up
-          ./go-up lineage-23.1-kernel_${{ env.DATE }}.zip
+          wget https://github.com/redmax19/kernel/releases/download/1/link.sh
+          chmod +x link.sh
+          ./link.sh lineage-24.0-kernel_${{ env.DATE }}.zip
           
