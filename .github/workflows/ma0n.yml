@@ -23,11 +23,7 @@ jobs:
           echo "Downloading AOSP Clang"
           mkdir -p toolchain
           cd toolchain
-          curl -L \
-            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/a71fa4c09d7109d611ee63964fc9fca58fee38cd/clang-r450784b/bin.tar.gz" \
-            -o clang.tar.gz
-          mkdir clang
-          tar -xf clang.tar.gz -C clang
+          git clone https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b.git clang
           cd ..
 
       - name: Clone kernel source
