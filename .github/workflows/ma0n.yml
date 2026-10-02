@@ -24,7 +24,7 @@ jobs:
           mkdir -p toolchain
           cd toolchain
           curl -L \
-            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz" \
+            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/a71fa4c09d7109d611ee63964fc9fca58fee38cd/clang-r450784b/bin.tar.gz" \
             -o clang.tar.gz
           mkdir clang
           tar -xf clang.tar.gz -C clang
