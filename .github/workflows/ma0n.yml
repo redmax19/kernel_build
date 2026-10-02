@@ -1,0 +1,87 @@
+name: Kernel External Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git-core gnupg flex bison build-essential zip curl \
+            zlib1g-dev libc6-dev-i386 x11proto-core-dev libx11-dev \
+            lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig \
+            bc ccache lld libncurses-dev libssl-dev python3 wget
+
+          echo "Downloading AOSP Clang"
+          mkdir -p toolchain
+          cd toolchain
+          curl -L \
+            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz" \
+            -o clang.tar.gz
+          mkdir clang
+          tar -xf clang.tar.gz -C clang
+          cd ..
+
+      - name: Clone kernel source
+        run: |
+          git clone --depth 1 https://github.com/LineageOS/android_kernel_samsung_universal9830 -b lineage-24.0 kernel_src
+
+      - name: Clone AnyKernel3
+        run: |
+          git clone --depth=1 https://github.com/felipeskyy/AnyKernel3.git anykernel
+
+      - name: Build Kernel
+        run: |
+          cd kernel_src
+          # Merge kernel configs
+          ./scripts/kconfig/merge_config.sh -m \
+            arch/arm64/configs/exynos9830_defconfig \
+            arch/arm64/configs/r8s.config
+          mv .config arch/arm64/configs/r8s_defconfig
+
+          # Set environment for compilation
+          export PATH="$PWD/../toolchain/clang/bin:$PATH"
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CC=clang
+          export LLVM=1
+          export LLVM_IAS=1
+          export CROSS_COMPILE=aarch64-linux-gnu-
+
+          # Clean and build
+          make mrproper
+          make O=out ARCH=arm64 r8s_defconfig
+          make O=out -j$(nproc --all)
+
+      - name: Setup AnyKernel
+        run: |
+          cd kernel_src
+          if [ -f out/arch/arm64/boot/Image ]; then
+            cp out/arch/arm64/boot/Image ../anykernel/
+            find out/ -type f -name "*.ko" -exec cp {} ../anykernel/modules/vendor/lib/modules/ \;
+          else
+            exit 1
+          fi
+
+          # Set build date
+          DATE=$(date +'%Y%m%d')
+          echo "DATE=$DATE" >> $GITHUB_ENV
+
+          # Zip
+          cd ../anykernel
+          zip -r9 ../lineage-23.1-kernel_${DATE}.zip ./*
+
+      - name: Upload ZIP to GoFile
+        run: |
+          wget https://raw.githubusercontent.com/GustavoMends/go-up/master/go-up
+          chmod +x go-up
+          ./go-up lineage-23.1-kernel_${{ env.DATE }}.zip
+          
