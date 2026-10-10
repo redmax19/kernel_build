@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
@@ -23,12 +23,16 @@ jobs:
           echo "Downloading AOSP Clang"
           mkdir -p toolchain
           cd toolchain
-          git clone https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b.git clang
+          curl -L \
+            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz" \
+            -o clang.tar.gz
+          mkdir clang
+          tar -xf clang.tar.gz -C clang
           cd ..
 
       - name: Clone kernel source
         run: |
-          git clone --depth 1 https://github.com/LineageOS/android_kernel_samsung_universal9830 -b lineage-24.0 kernel_src
+          git clone https://github.com/sexynos9830/990_upstream kernel_src
 
       - name: Clone AnyKernel3
         run: |
@@ -37,11 +41,6 @@ jobs:
       - name: Build Kernel
         run: |
           cd kernel_src
-          # Merge kernel configs
-          ./scripts/kconfig/merge_config.sh -m \
-            arch/arm64/configs/exynos9830_defconfig \
-            arch/arm64/configs/r8s.config
-          mv .config arch/arm64/configs/r8s_defconfig
 
           # Set environment for compilation
           export PATH="$PWD/../toolchain/clang/bin:$PATH"
@@ -54,7 +53,7 @@ jobs:
 
           # Clean and build
           make mrproper
-          make O=out ARCH=arm64 r8s_defconfig
+          make O=out ARCH=arm64 exynos9830-r8slte_defconfig
           make O=out -j$(nproc --all)
 
       - name: Setup AnyKernel
@@ -73,11 +72,11 @@ jobs:
 
           # Zip
           cd ../anykernel
-          zip -r9 ../lineage-24.0-kernel_${DATE}.zip ./*
+          zip -r9 ../lineage-23.1-kernel_${DATE}.zip ./*
 
       - name: Upload ZIP to GoFile
         run: |
-          wget https://github.com/redmax19/kernel/releases/download/1/link.sh
-          chmod +x link.sh
-          ./link.sh lineage-24.0-kernel_${{ env.DATE }}.zip
+          wget https://raw.githubusercontent.com/GustavoMends/go-up/master/go-up
+          chmod +x go-up
+          ./go-up lineage-23.1-kernel_${{ env.DATE }}.zip
           
