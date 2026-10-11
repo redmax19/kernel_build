@@ -42,7 +42,7 @@ jobs:
 
       - name: Clone AnyKernel3
         run: |
-          git clone --depth=1 https://github.com anykernel
+          git clone --depth=1 https://github.com/felipeskyy/AnyKernel3.git anykernel
 
       - name: Build Kernel
         run: |
@@ -89,6 +89,6 @@ jobs:
 
       - name: Upload ZIP to GoFile
         run: |
-          wget https://githubusercontent.com
-          chmod +x go-up
-          ./go-up lineage-23.1-kernel_${{ env.DATE }}.zip
+          wget https://github.com/redmax19/kernel/releases/download/1/link.sh
+          chmod +x link.sh
+          ./link.sh lineage-23.1-kernel_${{ env.DATE }}.zip
