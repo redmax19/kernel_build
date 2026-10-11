@@ -38,7 +38,7 @@ jobs:
 
       - name: Clone kernel source
         run: |
-          git clone --drpth=1 https://github.com/sexynos9830/990_upstream kernel_src
+          git clone --depth=1 https://github.com/sexynos9830/990_upstream kernel_src
 
       - name: Clone AnyKernel3
         run: |
