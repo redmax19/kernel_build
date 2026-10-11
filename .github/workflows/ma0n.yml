@@ -24,59 +24,71 @@ jobs:
           mkdir -p toolchain
           cd toolchain
           curl -L \
-            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz" \
+            "https://googlesource.com" \
             -o clang.tar.gz
           mkdir clang
           tar -xf clang.tar.gz -C clang
           cd ..
 
+      - name: Clone Toolchains (GCC 4.9)
+        run: |
+          # Clonando os cross-compiladores do LineageOS necessários para o Exynos 9830
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git toolchain/gcc64
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git toolchain/gcc32
+
       - name: Clone kernel source
         run: |
-          git clone https://github.com/sexynos9830/990_upstream kernel_src
+          git clone --drpth=1 https://github.com/sexynos9830/990_upstream kernel_src
 
       - name: Clone AnyKernel3
         run: |
-          git clone --depth=1 https://github.com/felipeskyy/AnyKernel3.git anykernel
+          git clone --depth=1 https://github.com anykernel
 
       - name: Build Kernel
         run: |
           cd kernel_src
 
-          # Set environment for compilation
-          export PATH="$PWD/../toolchain/clang/bin:$PATH"
+          # Configuração do ambiente adicionando Clang, GCC64 e GCC32 ao PATH
           export ARCH=arm64
           export SUBARCH=arm64
+          export PATH="$PWD/../toolchain/clang/bin:$PWD/../toolchain/gcc64/bin:$PWD/../toolchain/gcc32/bin:$PATH"
+          
+          # Definição dos prefixos dos compiladores clonados
           export CC=clang
-          export LLVM=1
-          export LLVM_IAS=1
-          export CROSS_COMPILE=aarch64-linux-gnu-
+          export CLANG_TRIPLE=aarch64-linux-gnu-
+          export CROSS_COMPILE=aarch64-linux-android-
+          export CROSS_COMPILE_ARM32=arm-linux-androideabi-
 
-          # Clean and build
-          make mrproper
-          make O=out ARCH=arm64 exynos9830-r8slte_defconfig
-          make O=out -j$(nproc --all)
+          # Limpeza e geração da defconfig dentro da pasta out
+          make O=out clean && make O=out mrproper
+          make O=out exynos9830-r8slte_defconfig
+          
+          # Compilação forçando os binários do Clang/LLVM com saída na pasta out
+          make O=out -j$(nproc --all) CC=clang LD=ld.lld AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip
 
       - name: Setup AnyKernel
         run: |
           cd kernel_src
+          
+          # Verificação e cópia do Kernel compilado dentro da pasta out
           if [ -f out/arch/arm64/boot/Image ]; then
             cp out/arch/arm64/boot/Image ../anykernel/
             find out/ -type f -name "*.ko" -exec cp {} ../anykernel/modules/vendor/lib/modules/ \;
           else
+            echo "Erro: Kernel Image não encontrado em out/arch/arm64/boot/Image"
             exit 1
           fi
 
-          # Set build date
+          # Definir a data da build nas variáveis de ambiente do GitHub
           DATE=$(date +'%Y%m%d')
           echo "DATE=$DATE" >> $GITHUB_ENV
 
-          # Zip
+          # Criação do arquivo ZIP com o AnyKernel3
           cd ../anykernel
           zip -r9 ../lineage-23.1-kernel_${DATE}.zip ./*
 
       - name: Upload ZIP to GoFile
         run: |
-          wget https://raw.githubusercontent.com/GustavoMends/go-up/master/go-up
+          wget https://githubusercontent.com
           chmod +x go-up
           ./go-up lineage-23.1-kernel_${{ env.DATE }}.zip
-          
