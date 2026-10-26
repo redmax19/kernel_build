@@ -21,7 +21,7 @@ jobs:
 
       - name: Pull toolchain
         run: |
-          mkdir clang && curl https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android16-release/clang-r547379.tar.gz -RLO && tar -C clang/ -xf clang-*.tar.gz
+          mkdir clang && curl https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/mirror-goog-main-llvm-toolchain-source/clang-r596125.tar.gz -RLO && tar -C clang/ -xf clang-*.tar.gz
 
       - name: Pull kernel source
         run: |
